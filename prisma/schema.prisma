@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  // ^ Note: Yahan "-js" hona zaroori hai, warna error aayega
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. ZONE MODEL
+model Zone {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  drivers   Driver[]
+}
+
+// 2. DRIVER MODEL
+model Driver {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String   @unique
+  idCardNo    String   @unique
+  isVerified  Boolean  @default(false)
+  isOnline    Boolean  @default(false)
+  
+  zoneId      String?
+  zone        Zone?    @relation(fields: [zoneId], references: [id])
+
+  adminNotes  String?
+  createdAt   DateTime @default(now())
+  orders      Order[]
+}
+
+// 3. USER MODEL
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+// 4. ORDER MODEL
+model Order {
+  id          String      @id @default(cuid())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  driverId    String?
+  driver      Driver?     @relation(fields: [driverId], references: [id])
+
+  status      OrderStatus @default(PENDING)
+  category    Category
+  description String?
+  
+  pickupAddr  String
+  dropAddr    String
+  
+  startTime   DateTime?
+  endTime     DateTime?
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PICKED_UP
+  DELIVERED
+  CANCELLED
+}
+
+enum Category {
+  EXPRESS
+  ESSENTIALS
+  DOCUMENTS
+}
